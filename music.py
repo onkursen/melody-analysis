@@ -1,93 +1,163 @@
-import random, copy
+# Onkur Sen and Kurt Stallmann
+# Last edited: 2/22/2012
 
-def modded(chord):
-    return sorted([note % 12 for note in chord])
+import copy
 
-def isSubset(sub, sup):
-    return set(sub).isSubset(set(sup))
+# Settings for decimal usage
+from decimal import *
+getcontext().prec = 8
+getcontext().rounding = ROUND_HALF_EVEN
+
+# Constants; use decimals for precision
+one = Decimal('1')
+two_thirds = Decimal('2') / Decimal('3')
+one_half = Decimal('1') / Decimal('2')
+one_third = Decimal('1') / Decimal('3')
+zero = Decimal('0')
+
+# Shifts the note to the base chromatic scale
+def mod(note):
+    return note % 12
+
+# Returns sorted, modded chord
+# NOTE: Must use tuples for hashing purposes
+def modded(chord): 
+    return tuple(sorted([mod(note) for note in chord]))
 
 # Chord database; major and minor chords only
-chords = {i:[modded([i, i+4, i+7]),modded([i, i+3, i+7])] for i in range(12)}
+chords = {}
+chords.update({modded([i, i+4, i+7]): (i, 'major') for i in range(12)})
+chords.update({modded([i, i+3, i+7]): (i, 'minor') for i in range(12)})
 
 # Scale database; major and harmonic minor scales only
-scales = {i:[modded([i,i+2,i+4,i+5,i+7,i+9,i+11]), modded([i,i+2,i+3,i+5,i+7,i+8,i+11])] for i in range(12)}
+scales = {}
+scales.update({modded([i,i+2,i+4,i+5,i+7,i+9,i+11]): (i, 'major') 
+    for i in range(12)})
+scales.update({modded([i,i+2,i+3,i+5,i+7,i+8,i+10,i+11]): (i, 'minor') 
+    for i in range(12)})
 
-def scaleType(scale):
-    third = scale[2]-scale[0]
-    if third == 4: return 'major'
-    elif third == 3: return 'minor'
-    return '?'
+# Reverse lookup in a dictionary: given value, finds key
+def lookup(item, database):
+    keys = [key for key, value in database.iteritems() if item == value]
+    return keys[0] if len(keys) == 1 else keys
 
-# Looks at note occurrences of a piece and assumed key and determines if major or minor by comparing thirds
-def MajMin(count, j):
-    Maj = (j+4)%12; Min = (j+3)%12;
-    if count[Maj] > count[Min]: return j, 'major'
-    elif count[Maj] < count[Min]: return j, 'minor'
-    return j, '?'
-        
-def key(piece):    
+# Reverse lookup for maximum value
+def lookupMax(database):
+    return lookup(max(database.values()), database)
+
+# Returns a tuple of:
+# 1. occurrence of notes in the chromatic scale for a given piece
+# 2. normalized weights of notes based on frequency of occurrence. 
+def count_notes(piece):
     # Count occurrences of notes
-    count = [0]*12
+    noteCount = [0] * 12
     for x in piece:
-        if type(x) is int: count[x%12]+=1
-        else: count[x[0]%12] += 1
+        target = x if type(x) is int else x[0]
+        noteCount[target % 12] += 1
         
-    # Create triad of three most frequently occurring notes
-    triad = []; d = copy.copy(count)
-    for j in range(3):
-        loc = d.index(max(d))
-        triad.append(loc)
-        d[loc] = -1
+    # Use Decimal to avoid floating-point error
+    weights = [Decimal(str(w)) / Decimal(str(len(piece))) 
+        for w in noteCount]
         
-    # If this triad is in our chord database, we've found the key    
-    for j in range(12):
-        if sorted(triad) in chords[j]: return MajMin(count, j)
-    
-    # Otherwise, look at top two notes, and see if they are contained in an existing chord.
-    # If they are, we've found the key.
-    dyad = triad[0:2]
-    for j in range(12):
-        for i in range(len(chords[j])):
-            if isSubset(dyad, chords[j][i]):
-                return MajMin(count, j)
-                
-    # SPECIAL CASE: If V and vi found most often, then we know that i is the most likely key
-    # since it contains the tonics of all considerable chords.
-    if (dyad[1]-dyad[0])%12 == 1:
-        return (dyad[0]-7)%12, 'minor'
-    
-    # Otherwise, choose the most frequently occurring note as the key
-    # print 'assumed tonic', triad[0]
-    # for i in range(len(piece)):
-    #     if piece[i] == triad[0] and i < len(piece)-1:
-    #         print 'found; before: {}, after: {}'.format(piece[i-1], piece[i+1])
-    # return MajMin(count, triad[0])
-    
-    possible = []
-    for tonic in range(12):
-        for scale in range(tonic):
-            if isSubset(dyad, scale):
-                possible.append(tonic,scaleType(scale))
-    
- 
+    return noteCount, weights
 
-# twinkle = [[48,0.25], [48,0.25], [55,0.25], [55,0.25], [57,0.25], [57,0.25], [55,0.25], [55,0.25]]
-# print 'twinkle1',key(twinkle)
-# 
-# twinkle = [[48,0.25], [48,0.25], [55,0.25], [55,0.25], [57,0.25], [57,0.25], [55,0.25], [55,0.25], [53,0.25], [53,0.25], [52,0.25], [52,0.25], [50,0.25], [50,0.25], [48,0.25], [48,0.25]]
-# print 'twinkle2',key(twinkle)
-# 
-# k545 = [0,0,0,0,4,4,7,7,-1,-1,-1,2,0,0,0,0]
-# print 'k545',key(k545)
-# 
-# hot = [4,4,2,2,0,0,0,0,4,4,2,2,0,0,0,0]
-# print 'hot',key(hot)
-# 
-# test = [0,4,7,4,0]
-# print 'test',key(test)
-# 
-# chopin = [-1, -1, 11, 11, 11, 11, 11, 11, 12, 12, 11, 11, 11, 11]
-# print 'chopin', key(chopin)
-# 
-# k545_2 = [11, 11, 11, 11, 11, 11, 11, 11, 14, 12, 11, 12, 14, 14, 14, 11, 7, 7, 7, 7]
-# print 'k545_2', key(k545_2)
+# Consonance relation between a key and a pitch in accordance
+# with music theory. Note that this relation is NOT SYMMETRIC,
+# e.g. a 5th above is not the same as a 4th below
+def consonance_with_key(musicKey, pitch):
+    diff = (pitch - musicKey[0]) % 12
+    if diff == 0: # 1st
+        return one
+    if diff == 7: # 5th
+        return two_thirds
+    if diff == 5: # 4th
+        return one_third
+        
+    # Major key with minor interval should have no consonance, and vice versa
+    if (musicKey[1] == 'major' and diff in [4,9]) or \
+    (musicKey[1] == 'minor' and diff in [3,8]):
+        return one_third
+    
+    return zero
+
+# Correlation function of keys in possible key set using weighted consonance
+def consonance_correlations(possibleKeySet, weights):
+    return {musicKey: sum([weights[note] * consonance_with_key(musicKey, note) 
+        for note in range(12)])
+        for musicKey in possibleKeySet}
+    
+# Binary operation indicating whether a note is in a scale or not   
+def membership(note, scale):
+    return one if note in scale else zero
+
+# Correlation function of keys in possible key set using weighted membership
+def membership_correlations(possibleKeySet, weights):
+    return {musicKey: sum([weights[note] * membership(note, lookup(musicKey, scales))
+        for note in range(12)]) 
+        for musicKey in possibleKeySet}
+
+def resolve(musicKey, last_note):
+    diff = mod(last_note - musicKey[0])
+    if last_note == musicKey[0]:
+        return one
+    if (musicKey[1] == 'major' and diff == 4) or (musicKey[1] == 'minor' and diff == 3):
+        return two_thirds
+    if diff == 7:
+        return one_half
+    return zero
+
+def resolve_correlations(piece, possibleKeySet):
+    last_note = piece[-1]
+    return {musicKey: resolve(musicKey, last_note) for musicKey in possibleKeySet}
+
+# Determines the key of a piece
+def key(piece, possibleKeySet):
+    # Get note counts and normalized weights
+    noteCount, weights = count_notes(piece)
+    
+    # Get consonance and membership correlations for each key
+    c_correlations = consonance_correlations(possibleKeySet, weights)
+    m_correlations = membership_correlations(possibleKeySet, weights)
+    r_correlations = resolve_correlations(piece, possibleKeySet)
+
+    # Return the key with the highest consonance correlation that also 
+    # has a perfect membership correlation.
+    # Perfect defined as >= 0.9999 due to floating point error;
+    # PROBLEM: too high of a threshold? need to explore
+    perfect_matches = {musicKey: c_correlations[musicKey]
+        for musicKey in m_correlations 
+        if m_correlations[musicKey] >= Decimal('0.9')}
+    # for k,v in perfect_matches.iteritems():
+    #     print k,v
+    return lookupMax(perfect_matches)
+
+# Returns opposite mode
+def complement(mode):
+    return 'minor' if mode == 'major' else 'major'
+
+# Returns chord progression for piece, with one chord per every "interval" notes
+def getProgression(piece, musicKey, interval):
+    tonic, mode = musicKey
+    
+    # Assume possible key set only contains, I, IV, V, and relative major/minor
+    possibleKeySet = set([musicKey, (mod(tonic+5), mode), (mod(tonic+7), mode)])
+    if mode == 'major': # add relative minor
+        possibleKeySet.add((mod(tonic-3), complement(mode)))
+    else: # add relative major
+        possibleKeySet.add((mod(tonic+3), complement(mode)))
+    # Splits piece up into groups of "interval" notes
+    groups = [piece[i*interval:(i+1)*interval] for i in range(len(piece)/interval)]
+    
+    harmony = [key(group, possibleKeySet) for group in groups]
+    returns = []
+    curr = 0
+    i = 1
+    while i < len(harmony):
+        if harmony[i] == musicKey:
+            while i+1 < len(harmony) and harmony[i+1] == musicKey:
+                i += 1
+            returns.append(i-curr+1)
+            curr = i+1
+        i += 1
+    print 'returns', returns
+    return harmony
