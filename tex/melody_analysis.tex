@@ -20,36 +20,33 @@
 \usepackage{color}
 \DeclareMathOperator*{\argmax}{arg\,max}
 
-\title{Analysis of Melody Through Key Definition and Generation of Complementary Harmonies}
+\title{Analysis of Melody Through Key Definition and Generation of Complementary Harmonies\footnote{The source code for this project can be found at https://github.com/onkursen/melody_analysis.}}
 \author{
 Onkur Sen\\
 Rice University, Houston, TX\\
-onkur@rice.edu
+onkur@rice.edu\\
 \and
 Kurt Stallmann\\
 Rice University, Houston, TX\\
-stallmann@rice.edu}
+stallmann@rice.edu
+}
 \date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Algorithmic music engages computational methods to create sound structures. Previous efforts in algorithmic music include automatic generation of music, sometimes through the application of biological models, e.g., genetic programming and genetic algorithms. Other notable methods use random walks and Markov chains.
+	Algorithmic music engages computational methods to create sound structures. Previous efforts in algorithmic music include automatic generation of music, sometimes through the application of biological models, e.g., genetic programming and genetic algorithms. Other notable methods use random walks and Markov chains. 
 
-Our focus is to create a mathematical model of theoretical notions found in common practice music. We provide a method of analysis that determines the key of an input melodic line by utilizing two different correlation metrics depending on consonance and scale membership, respectively. 
-
-We then generate a harmonic progression that supports the melody within the determined key. To do this, we reuse the previous metrics with additional constraints such as harmonic relations with the given key and transitions between chords.
-
-We test this model using prominent compositions from musical literature as input and noting how the output of the algorithm meets expectations or provides viable alternatives.
+	Our focus is to create a mathematical model of theoretical notions found in common practice music. We provide a method of analysis that determines the key of an input melodic line by utilizing two different correlation metrics depending on consonance and scale membership, respectively. We then generate a harmonic progression that supports the melody within the determined key. To do this, we reuse the previous metrics with additional constraints such as harmonic relations with the given key and transitions between chords. We test this model using prominent compositions from musical literature as input and noting how the output of the algorithm meets expectations or provides viable alternatives.
 \end{abstract}
-
+%
 \section{Introduction}
-Algorithmic music is a relatively new form of music generation that utilizes computational approaches to create coherent musical structures. Much work has been done in this field within the context of a particular style. David Cope has previously worked with generating Western classical music in the style of Mozart. Microsoft's Songsmith generates harmonies for a sung melody using Markov models. In particular, we aim to study how much information we can obtain about a work of tonal music given only its melodic line. To this effect, we wish to find the key of the piece and generate a complementary harmony that maintains the standards provided by common practice.
+Algorithmic music is a relatively new form of music generation that utilizes computational approaches to create coherent musical structures. However, the idea of generating music via an algorithmic approach that exploits combinatorial possibilities dates back to the {\it Musikalisches W\"{u}rfelspiel} from the 18$^{th}$ century~\cite{cope-EMI} and even earlier to the $11^{th}$ century with the work of Guido of Arezzo~\cite{nierhaus09}. Much work has been done in this field within the context of a particular style.  David Cope has previously worked with generating Western classical music in the style of Mozart. Microsoft's Songsmith generates harmonies for a sung melody using Markov models~\cite{mysong}. In particular, we aim to study how much information we can obtain about a work of tonal music given only its melodic line. To this effect, we wish to find the key of the piece and generate a complementary harmony that falls within accepted norms of common practice music.
 
-This problem presents multiple challenges in different areas of music. First, different melodies convey different amounts and types of information, and often times tonal ambiguity arises when considering only the melody. However, we can use this ambiguity to our advantage when considering the generation of a variation upon an original work. We can follow multiple paths that will produce different outcomes which are all musically viable in the context of common practice music.
+This problem presents multiple challenges in different areas of music. This problem presents multiple challenges in different areas of music. First, different melodies convey different types and  quantities of musical information, and often times tonal ambiguity arises when considering the melody alone. However, this ambiguity can be used to our advantage as it often suggests the generation of variations upon an model. Following these multiple paths will produce different outcomes, many of which are musically viable options depending on the musical context in which they  are situated~\cite{schoenberg}.
 
-Second, the presence of the harmony is interrelated with the melody towards defining a certain key. Thus, when the harmony is not given, we must choose a harmony that articulates the melody tonally. In particular, most harmonies support the melody in supportive or antagonistic ways through conjunct and disjunct motion. Therefore, we must select a type of harmony that properly reinforces the melody.
+Second, harmony that accompanies a melody works in conjunction with it towards defining a certain key. Thus, when the harmony  is not given, we must choose a harmony that articulates the inherent tonal space suggested by the melody. In particular,  harmonies can support or antagonize these inherent tonal suggestions of the melody through chord choice and contrapuntal motion (conjunct or disjunct). These considerations complicate how a harmony is chosen that properly reinforces the melody.
 
 \section{Determining the Key of an Input Score} 
 The question we pose here is simple: How can we find the key of a piece of music given only its melody? We define the key of the piece as having two components, a {\bf tonic}, the root of the key, and a {\bf mode}, which is either major or minor. Our approach is broken up into the following steps:
@@ -58,13 +55,14 @@ The question we pose here is simple: How can we find the key of a piece of music
 We assume the musical work is sampled at some regular time interval, i.e., we are assuming a discrete-time input signal $M$. Our first step in analysis is to simply count up the number of occurrences of each pitch in the chromatic scale. This indicates the dominant contributions among the scale to the character of the piece and signals a first step towards understanding the key of the piece.
 
 Mathematically, we represent pitches on a chromatic scale as 12 values between 0 and 11, with 0 being C and 11 being B, in compliance with the commonly-used MIDI system. For our purposes, notes that differ by octaves are considered equivalent and thus undergo a modulo 12 operation. We can thus define the {\bf note-counting operation} on a pitch $p$ as:
-\[n(p_i) = \#\{x\in S; x = p_i\}, \quad p_i=0,1,\ldots,11. \]
+\begin{equation}
+	n(p_i) = \#\{x\in S; x = p_i\}, \quad p_i=0,1,\ldots,11.
+\end{equation}
 
 Alternatively, we can determine the importance of notes with {\bf weights that represent the relative frequency} of notes. This is defined as follows:
-\[w(p_i) = \frac{n(p_i)}{\sum_{j=0}^{11} n(p_j)}.\]
-
-%\subsection{Previous Model: Chord-based Matching and Membership} % FINISH
-%Before considering our main methodology, it is important to review our past approaches as they were crucial in the formation of our current line of thinking.
+\begin{equation}
+	w(p_i) = \frac{n(p_i)}{\sum_{j=0}^{11} n(p_j)}.
+\end{equation}
 
 \subsection{Defining Correlation Functions for Characterizing Keys}
 In order to measure the viability of a certain key with the given input score, we define two different {\bf correlation metrics} with different criteria.
@@ -88,29 +86,35 @@ The consonance correlation emphasizes how euphonious a pitch (or a sequence of p
 \end{table}
 
 The consonance correlation function $C_C$ for a key is then simply defined as the sum of the consonance relations for each pitch on the chromatic scale weighted by its appearance in the piece:
-\[C_C(key) = \sum_{i=0}^{11} w(p_i) \times consonance(p_i, key).\]
+\begin{equation}
+	C_C(key) = \sum_{i=0}^{11} w(p_i) \times consonance(p_i, key).
+\end{equation}
 
 Note that for any key, $0\leq C_C(key) \leq 1$, so that the consonance correlation is normalized.
 
 \subsubsection{Membership Correlation Function}
 The membership correlation emphasizes how well a pitch (or a sequence of pitches) fits into a given scale which is associated with a key. We define the membership function between a note and a scale as simply the characteristic function of that scale. More explicitly:
-\begin{equation*}
+\begin{equation}
 membership(note, scale) =  \left\{
 \begin{array}{ccc}
 1 & \text{\emph{if}} & note \in scale \\
 0 & \text{\emph{if}} & note \notin scale \\
 \end{array}
 \right.
-\end{equation*}
+\end{equation}
 
 The membership correlation function $C_M$ for a key is then the weighted sum, similar to the consonance correlation:
-\[C_M(key) = \sum_{i=0}^{11} w(p_i) \times membership(p_i, scale(key)).\]
+\begin{equation}
+	C_M(key) = \sum_{i=0}^{11} w(p_i) \times membership(p_i, scale(key)).
+\end{equation}
 Here too, we see that the membership function is normalized, i.e., $0\leq C_M(key) \leq 1$ for any key.
 
 \subsection{Final Steps: Using Correlation Functions to Determine Key}
 We first find the consonance and membership correlations for each key in the chromatic scale. To find the key of the piece, we wish to maximize both of those correlation functions. However, a perfect membership correlation is not viable in common practice music as we often have the introduction of accidentals as well as temporary deviations into other keys. 
 
 Thus, we settle on a threshold value of 0.9 for the membership correlation. All keys with a membership correlation lower than this value are discarded. The key of the piece is then chosen from the remaining options as that which maximizes the consonance correlation and would hence best characterize the piece.
+
+A note about our approach: all of our musical samples were from the beginnings of the pieces, which inherently reinforce the tonic by design and would be most telling in tonal music.
 
 \section{Creating a Complementary Harmonic Progression}
 We have obtained a significant amount of information now that we know the key of the piece. How can we use this information to generate a harmony that is plausible in the realm of common practice? We set forth a few reasonable approximations to tremendously simplify the problem:
@@ -129,15 +133,16 @@ Using these assumptions, we simply apply the procedure for determining the key o
 \subsection{Key Definition}
 We focused on applying this method of key definition to samples of Western classical music, particularly those from the Baroque and Classical periods. Overall, we were able to successfully determine keys for 15 different pieces, which included the following:
 \begin{itemize}
-\item Twinkle, Twinkle, Little Star (in C Major)
-\item Bach: Invention No. 1 in C Major; Minuet in G Major; Minuet in G minor
+%\item Twinkle, Twinkle, Little Star (in C Major)
+\item Bach: Invention No. 1 in C Major; Invention No. 2 in C minor; Minuet in G Major; Minuet in G minor
 \item Mozart: K. 545, $1^{st}$ mvt. (C Major) and $2^{nd}$ mvt. (G Major)
 \item Beethoven: Piano Sonata No. 1, $1^{st}$ mvt. (F minor); Piano Sonata No. 8 (Path\'{e}tique), $2^{nd}$ mvt. (C$^{sharp}$ Major)
 \end{itemize}
 
-However, we observed limitations of our approach when considering pieces from the Romantic period, such as Chopin's Prelude in Em, where the melody simply consists of two notes. This suggests that in Chopin and in Romantic music in general, the harmony begins to play a more dominant role compared to the melody and becomes a much stronger component of the score.
 
-Another interesting example was the Schumann Romance, where the key returned was the relative minor of the actual key. However, the melody was harmonized on parallel thirds, and when the lower melody was accounted for, the proper key was returned. Thus, we see that as music progresses historically, it becomes difficult to precisely determine the key using common practice conventions. Of course, we can utilize this to our advantage and produce a harmonic progression based around the same melody in another key for the sake of variation. Nevertheless, these contrary examples give us a much more realistic indication of the scope of our approach as well as the problem space.
+However, we observed limitations of our approach when considering pieces from the Romantic period, such as Chopin's Prelude in E minor, Op. 28 No. 4, where the melody simply consists of two notes. This suggests that in this work of Chopin, the harmony begins to play a more dominant role than the melody in  the definition of a tonal space.  It also suggests that the composer purposely exploited the tonal ambiguity  present in such an extremely limited melodic pitch set as a means to develop his harmonic progressions.
+
+Another interesting example was the Schumann Romance in F\# Major, Op. 28 No. 2, where the key returned was the relative minor of the actual key. However, the melody was harmonized on parallel thirds, and when the lower melody was accounted for, the proper key was returned. Thus, we see that as music progresses historically, it becomes difficult to precisely determine the key using common practice conventions. Of course, we can utilize this to our advantage and produce a harmonic progression based around the same melody in another key for the sake of variation. Nevertheless, these contrary examples give us a much more realistic indication of the scope of our approach as well as the problem space.
 
 \subsection{Harmony Generation}
 
@@ -154,4 +159,6 @@ Furthermore, we attempted to glean time information from the harmonic progressio
 \section{Conclusion}
 Our research goal was to produce a computational analysis technique for determining the key of an input melody and generate a complementary harmonic progression in accordance with common practice music. While we were able to see the success of our methods in many instances of Western classical music from the Baroque and Classical periods, we also saw the limitations in applying key definition to music from the Romantic period. Furthermore, our work in harmony generation, while relatively accurate, leaves many doors open on the actual form of the harmony, a fact that can be exploited in the future for variational purposes.
 
+\bibliography{melody_analysis}{}
+\bibliographystyle{plain}
 \end{document}

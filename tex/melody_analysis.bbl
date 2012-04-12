@@ -1,0 +1,27 @@
+\begin{thebibliography}{1}
+
+\bibitem{cope-EMI}
+David Cope.
+\newblock {\em Experiments in musical intelligence}.
+\newblock A-R Editions, Inc., 1996.
+
+\bibitem{nierhaus09}
+Gerhard Nierhaus.
+\newblock {\em Algorithmic Composition: paradigms of Automated Music
+  Generation}.
+\newblock Springer, 2009.
+
+\bibitem{schoenberg}
+Arnold Schoenberg, Leonard Stein, and Gerald Strang.
+\newblock {\em Fundamentals of musical composition / Arnold Schoenberg ; edited
+  by Gerald Strang ; with the collaboration of Leonard Stein}.
+\newblock Faber, London :, 1970.
+
+\bibitem{mysong}
+Ian Simon, Dan Morris, and Sumit Basu.
+\newblock Mysong: automatic accompaniment generation for vocal melodies.
+\newblock In {\em Proceedings of the twenty-sixth annual SIGCHI conference on
+  Human factors in computing systems}, CHI '08, pages 725--734, New York, NY,
+  USA, 2008. ACM.
+
+\end{thebibliography}
